@@ -1,8 +1,8 @@
 //
 //  ContentView.swift
-//  ios-dev
+//  RemindMe
 //
-//  Created by Ruslan Zabarov on 1/21/25.
+//  Created by Brian Krupp on 1/28/25.
 //
 
 import SwiftUI
@@ -14,36 +14,51 @@ enum Priority: String, CaseIterable, Identifiable {
     case high = "High"
 }
 
-struct Reminder: Identifiable {
+struct Reminder: Identifiable, Hashable {
     let id = UUID()
-    let title: String
-    let notes: String
-    let priority: Priority
+    var title: String
+    var priority: Priority = .low
+    var notes: String
 }
 
 struct ContentView: View {
-    @State var reminders = [
-        Reminder(title: "Buy milk", notes: "For kids", priority: .low),
-        Reminder(title: "Hello", notes: "World", priority: .high),
-    ]
-    @State var isShowing = false
-
+    @State private var showing = false
+    @State var reminder = Reminder(title: "", priority: .low, notes: "")
+    @State var reminders = [Reminder]()
     var body: some View {
-        VStack {
-            List(reminders) { reminder in
-                ReminderRow(reminder: reminder)
+        NavigationStack {
+            VStack {
+                List($reminders) { $currentReminder in
+                    NavigationLink {
+                        NewReminderView(
+                            reminder: $currentReminder, reminders: $reminders,
+                            isUpdating: true)
+                    } label: {
+                        ReminderRow(reminder: currentReminder)
+                    }
+                }
+                .listStyle(.plain)
+                Spacer()
+                Button("Add Reminder") {
+                    // What do we do?
+                    showing.toggle()
+                }
             }
-            .listStyle(.plain)
-            Spacer()
-            Button("add a reminder") {
-                isShowing = true
+            .navigationTitle(Text("Remind Me"))
+            .sheet(isPresented: $showing) {
+                NewReminderView(
+                    reminder: $reminder, reminders: $reminders,
+                    isUpdating: false)
             }
-        }.sheet(isPresented: $isShowing) {
-            CreateReminderView(remininders: $reminders)
         }
     }
 }
 
 #Preview {
-    ContentView()
+    @Previewable @State var reminders = [
+        Reminder(title: "Buy milk", priority: .low, notes: "For Kids"),
+        Reminder(title: "Pay bills", priority: .medium, notes: "Online"),
+        Reminder(title: "Go to the gym", priority: .high, notes: "Need to run"),
+    ]
+    ContentView(reminders: reminders)
 }

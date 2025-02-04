@@ -7,15 +7,15 @@
 
 import SwiftUI
 
-enum Priority: String, CaseIterable, Identifiable {
+enum Priority: String, CaseIterable, Identifiable, Codable {
     var id: Self { self }
     case low = "Low"
     case medium = "Medium"
     case high = "High"
 }
 
-struct Reminder: Identifiable, Hashable {
-    let id = UUID()
+struct Reminder: Identifiable, Hashable, Codable {
+    var id = UUID()
     var title: String
     var priority: Priority = .low
     var notes: String
@@ -24,20 +24,29 @@ struct Reminder: Identifiable, Hashable {
 struct ContentView: View {
     @State private var showing = false
     @State var reminder = Reminder(title: "", priority: .low, notes: "")
-    @State var reminders = [Reminder]()
+    @State var reminders = ReminderModel.load()
+    
+    func removeItems(at offsets: IndexSet) {
+        reminders.remove(atOffsets: offsets)
+        ReminderModel.save(reminders)
+    }
+    
     var body: some View {
         NavigationStack {
             VStack {
-                List($reminders) { $currentReminder in
-                    NavigationLink {
-                        NewReminderView(
-                            reminder: $currentReminder, reminders: $reminders,
-                            isUpdating: true)
-                    } label: {
-                        ReminderRow(reminder: currentReminder)
+                List {
+                    ForEach($reminders) { $currentReminder in
+                        NavigationLink {
+                            NewReminderView(
+                                reminder: $currentReminder, reminders: $reminders,
+                                isUpdating: true)
+                        } label: {
+                            ReminderRow(reminder: currentReminder)
+                        }
                     }
+                    .onDelete(perform: removeItems)
+                    .listStyle(.plain)
                 }
-                .listStyle(.plain)
                 Spacer()
                 Button("Add Reminder") {
                     // What do we do?
@@ -50,15 +59,13 @@ struct ContentView: View {
                     reminder: $reminder, reminders: $reminders,
                     isUpdating: false)
             }
+            .toolbar {
+                EditButton()
+            }
         }
     }
 }
 
 #Preview {
-    @Previewable @State var reminders = [
-        Reminder(title: "Buy milk", priority: .low, notes: "For Kids"),
-        Reminder(title: "Pay bills", priority: .medium, notes: "Online"),
-        Reminder(title: "Go to the gym", priority: .high, notes: "Need to run"),
-    ]
-    ContentView(reminders: reminders)
+    ContentView()
 }

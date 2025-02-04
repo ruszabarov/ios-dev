@@ -35,10 +35,14 @@ struct NewReminderView: View {
                 Button("Save") {
                     // What do we do?
                     reminders.append(reminder)
+                    ReminderModel.save(reminders)
                     reminder = Reminder(title: "", priority: .low, notes: "")
                     dismiss()
                 }
             }
+        }
+        .onDisappear {
+            ReminderModel.save(reminders)
         }
         .padding()
         .navigationTitle(isUpdating ? "Update Reminder" : "New Reminder")
